@@ -48,12 +48,16 @@ class FaissVectorStore:
     def load(self):
         faiss_path = os.path.join(self.persist_dir, "faiss.index")
         meta_path = os.path.join(self.persist_dir, "metadata.pkl")
+        if not os.path.exists(faiss_path) or not os.path.exists(meta_path):
+            raise FileNotFoundError(f"FAISS index or metadata not found in {self.persist_dir}")
         self.index = faiss.read_index(faiss_path)
         with open(meta_path, "rb") as f:
             self.metadata = pickle.load(f)
         print(f"[INFO] Loaded Faiss index and metadata from {self.persist_dir}")
 
     def search(self, query_embedding: np.ndarray, top_k: int = 5):
+        if self.index is None:
+            raise ValueError("FAISS index not loaded. Build or load it first.")
         D, I = self.index.search(query_embedding, top_k)
         results = []
         for idx, dist in zip(I[0], D[0]):
@@ -66,11 +70,24 @@ class FaissVectorStore:
         query_emb = self.model.encode([query_text]).astype('float32')
         return self.search(query_emb, top_k=top_k)
 
-# Example usage
+
+# ----------------------------
+# Example usage / __main__
+# ----------------------------
 if __name__ == "__main__":
-    from data_loader import load_all_documents
-    docs = load_all_documents("data")
+    from src.data_loader import load_all_documents
+
     store = FaissVectorStore("faiss_store")
-    store.build_from_documents(docs)
-    store.load()
-    print(store.query("What is attention mechanism?", top_k=3))
+    faiss_path = os.path.join(store.persist_dir, "faiss.index")
+
+    # Build index only if it doesn't exist
+    if os.path.exists(faiss_path):
+        store.load()
+    else:
+        docs = load_all_documents("data")
+        store.build_from_documents(docs)
+
+    # Example query
+    results = store.query("What is attention mechanism?", top_k=3)
+    for i, r in enumerate(results):
+        print(f"[Result {i+1}] Distance: {r['distance']}, Text: {r['metadata']['text'][:200]}...")
