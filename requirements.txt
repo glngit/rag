@@ -13,3 +13,12 @@ langchain_openai
 langgraph
 streamlit
 google-generativeai
+langchain-text-splitters
+docx2txt
+unstructured
+openpyxl
+jq
+jsonpath
+numpy
+langchain-huggingface
+ipywidgets
