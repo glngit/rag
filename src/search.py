@@ -12,7 +12,15 @@ GEMINI_API_KEY_ENV = "GEN_API_KEY"  # Env var storing your Gemini key
 
 
 class RAGSearch:
-    def __init__(self, persist_dir: str = "faiss_store", embedding_model: str = "all-MiniLM-L6-v2"):
+    def __init__(self, persist_dir: str = "faiss_store", embedding_model: str = "all-MiniLM-L6-v2", use_dockling: bool = True):
+        """
+        Initialize RAG Search with optional Dockling support.
+        
+        Args:
+            persist_dir: Directory for storing FAISS index
+            embedding_model: Embedding model to use
+            use_dockling: If True, use Dockling for enhanced document understanding
+        """
         # Load or build vector store
         self.vectorstore = FaissVectorStore(persist_dir, embedding_model)
         faiss_index_path = os.path.join(persist_dir, "faiss.index")
@@ -20,7 +28,8 @@ class RAGSearch:
 
         if not (os.path.exists(faiss_index_path) and os.path.exists(meta_path)):
             print("[INFO] FAISS index not found, building vector store...")
-            docs = load_all_documents("data")
+            # Load documents with optional Dockling enhancement
+            docs = load_all_documents("data", use_dockling=use_dockling)
             self.vectorstore.build_from_documents(docs)
         else:
             print(f"[INFO] FAISS index found at {faiss_index_path}, loading...")
@@ -36,6 +45,7 @@ class RAGSearch:
         self.model = genai.GenerativeModel(self.model_name)
 
         print(f"[INFO] Gemini LLM initialized: {GEMINI_MODEL}")
+        print(f"[INFO] Document understanding: {'Dockling' if use_dockling else 'Standard loaders'}")
 
     def search_and_summarize(self, query: str, top_k: int = 5) -> str:
         # Step 1: Retrieve top documents from FAISS

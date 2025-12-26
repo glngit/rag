@@ -22,3 +22,6 @@ jsonpath
 numpy
 langchain-huggingface
 ipywidgets
+docling
+docling-core
+pillow

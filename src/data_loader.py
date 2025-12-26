@@ -5,11 +5,36 @@ from langchain_community.document_loaders import Docx2txtLoader
 from langchain_community.document_loaders.excel import UnstructuredExcelLoader
 from langchain_community.document_loaders import JSONLoader
 
-def load_all_documents(data_dir: str) -> List[Any]:
+# Try to import Dockling for enhanced document understanding
+try:
+    from src.dockling_loader import DocklingDocumentLoader
+    DOCKLING_AVAILABLE = True
+except ImportError:
+    DOCKLING_AVAILABLE = False
+
+def load_all_documents(data_dir: str, use_dockling: bool = True) -> List[Any]:
     """
     Load all supported files from the data directory and convert to LangChain document structure.
     Supported: PDF, TXT, CSV, Excel, Word, JSON
+    
+    Args:
+        data_dir: Directory containing documents
+        use_dockling: If True and available, use Dockling for enhanced document understanding
+        
+    Returns:
+        List of LangChain Document objects
     """
+    
+    # Use Dockling if available and enabled
+    if use_dockling and DOCKLING_AVAILABLE:
+        print("[INFO] Using Dockling for enhanced document understanding...")
+        try:
+            dockling_loader = DocklingDocumentLoader()
+            documents = dockling_loader.load_all_documents_from_directory(data_dir)
+            print(f"[INFO] Loaded {len(documents)} documents using Dockling")
+            return documents
+        except Exception as e:
+            print(f"[WARNING] Dockling loading failed, falling back to standard loaders: {e}")
     # Use project root data folder
     data_path = Path(data_dir).resolve()
     print(f"[DEBUG] Data path: {data_path}")
